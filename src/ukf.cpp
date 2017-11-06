@@ -9,8 +9,10 @@ using std::vector;
 
 /* Constant representing the zero threshold of the algorithm. */
 #define ZERO_THRESH 0.0001
+
 /* Converts time from milliseconds to seconds. */
 #define CONVERT_USEC_TIME_TO_SECONDS(usec_time) usec_time *= 1e-6;
+
 /* Normalize an angle to be in range from -PI to PI. */
 #define NORMALIZE_ANGLE(angle) 		             \
 		 {                                         \
@@ -39,9 +41,11 @@ UKF::UKF() {
 	// if this is false, radar measurements will be ignored (except during init)
 	use_radar_ = true;
 
-	calc_laser_nis_ = true;
+	// if this is true, laser NIS measurements will be calculated and printed.
+	calc_laser_nis_ = false;
 
-	calc_radar_nis_ = true;
+	// if this is true, radar NIS measurements will be calculated and printed.
+	calc_radar_nis_ = false;
 
 	// Number of elements in x vector
 	n_x_ = 5;
@@ -79,20 +83,29 @@ UKF::UKF() {
 	// Radar measurement noise standard deviation radius change in m/s
 	std_radrd_ = 0.3;
 
+	// Makes sure that the first call to `ProcessMeasurement()` will initialize the filter.
 	is_initialized_ = false;
 
+	// The time in milliseconds of the latest measurement.
 	time_us_ = 0;
 
+	// The lambda value for the sigma points calculation.
 	lambda_ = 3 - n_aug_;
 
 	// Initialize weights
 	weights_ = VectorXd(2 * n_aug_ + 1);
 
+	// Number of laser samples that were processed by the filter.
 	laser_n_samples_ = 0;
+
+	// Number of radar samples that were processed by the filter.
 	radar_n_samples_ = 0;
 
-	laser_samples_above_thold_ = 0;
-	radar_samples_above_thold_ = 0;
+	// Number of laser samples that has scored below the threshold in NIS test.
+	laser_samples_below_thold_ = 0;
+
+	// Number of radar samples that has scored below the threshold in NIS test.
+	radar_samples_below_thold_ = 0;
 
 }
 
@@ -116,8 +129,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
 			P_(0, 0) = std_laspx_ * std_laspx_;
 			P_(1, 1) = std_laspy_ * std_laspy_;
-		} else if (meas_package.sensor_type_
-				== MeasurementPackage::SensorType::RADAR) {
+		} else if (meas_package.sensor_type_ == MeasurementPackage::SensorType::RADAR) {
 			double rho = meas_package.raw_measurements_(0);
 			double phi = meas_package.raw_measurements_(1);
 
@@ -164,8 +176,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 			&& meas_package.sensor_type_ == MeasurementPackage::SensorType::LASER) {
 		UpdateLidar(meas_package);
 	}
-
-	cout << "x = " << endl << x_ << endl;
 }
 
 /**
@@ -354,11 +364,11 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 		if (nis_thold) {
 			laser_n_samples_++;
 			if (nis < nis_thold) {
-				laser_samples_above_thold_++;
+				laser_samples_below_thold_++;
 			}
 
 			cout << "laser_consistency_precent = "
-					<< laser_samples_above_thold_ * 100 / laser_n_samples_ << "%"
+					<< laser_samples_below_thold_ * 100 / laser_n_samples_ << "%"
 					<< endl;
 		} else {
 			cout << "Chi-square value for r=" << n_z
@@ -463,11 +473,11 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 		if (nis_thold) {
 			radar_n_samples_++;
 			if (nis < nis_thold) {
-				radar_samples_above_thold_++;
+				radar_samples_below_thold_++;
 			}
 
 			cout << "radar_consistency_precent = "
-					<< radar_samples_above_thold_ * 100 / radar_n_samples_ << "%"
+					<< radar_samples_below_thold_ * 100 / radar_n_samples_ << "%"
 					<< endl;
 		} else {
 			cout << "Chi-square value for r=" << n_z

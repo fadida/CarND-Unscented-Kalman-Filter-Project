@@ -79,11 +79,11 @@ public:
 	///* The number of radar measurements
 	unsigned long radar_n_samples_;
 
-	///* The number of laser NIS values above the NIS threshold.
-	unsigned long laser_samples_above_thold_;
+	///* The number of laser NIS values below the NIS threshold.
+	unsigned long laser_samples_below_thold_;
 
-	///* The number of radar NIS values above the NIS threshold.
-	unsigned long radar_samples_above_thold_;
+	///* The number of radar NIS values below the NIS threshold.
+	unsigned long radar_samples_below_thold_;
 
 	/**
 	 * Constructor
