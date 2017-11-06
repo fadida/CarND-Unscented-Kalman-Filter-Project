@@ -164,16 +164,12 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 	if (delta_t > ZERO_THRESH) {
 		Prediction(delta_t);
 	} else {
-		cout
-				<< "Delta t is too small for anther prediction. Skipping prediction step."
-				<< endl;
+		cout << "Delta t is too small for anther prediction. Skipping prediction step." << endl;
 	}
 
-	if (use_radar_
-			&& meas_package.sensor_type_ == MeasurementPackage::SensorType::RADAR) {
+	if (use_radar_ && meas_package.sensor_type_ == MeasurementPackage::SensorType::RADAR) {
 		UpdateRadar(meas_package);
-	} else if (use_laser_
-			&& meas_package.sensor_type_ == MeasurementPackage::SensorType::LASER) {
+	} else if (use_laser_ && meas_package.sensor_type_ == MeasurementPackage::SensorType::LASER) {
 		UpdateLidar(meas_package);
 	}
 }
